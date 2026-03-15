@@ -19,6 +19,13 @@ data class Location(val lat: Double, val lon: Double)
 @Serializable
 data class CurrentWeather(val temperatureC: Double, val windSpeedKmh: Double)
 
+// --- Cached weather data (no location, shared across nearby coords) ---
+
+data class CachedWeather(
+    val current: CurrentWeather,
+    val retrievedAt: String,
+)
+
 // --- Open-Meteo upstream response (subset) ---
 
 @Serializable

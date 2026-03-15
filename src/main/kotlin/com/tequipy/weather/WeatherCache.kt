@@ -13,7 +13,7 @@ class WeatherCache(
     private val cache = Caffeine.newBuilder()
         .expireAfterWrite(Duration.ofSeconds(config.ttlSeconds))
         .maximumSize(config.maxSize)
-        .build<String, WeatherResponse>()
+        .build<String, CachedWeather>()
 
     private val hitCounter = registry?.let {
         Counter.builder("weather_cache_requests").tag("result", "hit").register(it)
@@ -22,14 +22,16 @@ class WeatherCache(
         Counter.builder("weather_cache_requests").tag("result", "miss").register(it)
     }
 
-    fun get(lat: Double, lon: Double): WeatherResponse? {
+    fun get(lat: Double, lon: Double, recordMetrics: Boolean = true): CachedWeather? {
         val result = cache.getIfPresent(coordKey(lat, lon))
-        if (result != null) hitCounter?.increment() else missCounter?.increment()
+        if (recordMetrics) {
+            if (result != null) hitCounter?.increment() else missCounter?.increment()
+        }
         return result
     }
 
-    fun put(lat: Double, lon: Double, response: WeatherResponse) {
-        cache.put(coordKey(lat, lon), response)
+    fun put(lat: Double, lon: Double, data: CachedWeather) {
+        cache.put(coordKey(lat, lon), data)
     }
 
     companion object {

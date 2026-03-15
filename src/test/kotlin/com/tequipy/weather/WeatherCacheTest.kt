@@ -8,8 +8,7 @@ class WeatherCacheTest {
 
     private val cache = WeatherCache(AppConfig.CacheConfig(ttlSeconds = 60, maxSize = 100))
 
-    private val sample = WeatherResponse(
-        location = Location(52.52, 13.41),
+    private val sample = CachedWeather(
         current = CurrentWeather(temperatureC = 5.0, windSpeedKmh = 10.0),
         retrievedAt = "2026-01-01T00:00:00Z",
     )
