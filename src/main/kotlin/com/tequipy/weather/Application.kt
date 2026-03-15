@@ -17,5 +17,5 @@ fun Application.module() {
     configureSerialization()
     configureCallLogging()
     configureRouting(service)
-    markReady()
+    this.markReady()
 }

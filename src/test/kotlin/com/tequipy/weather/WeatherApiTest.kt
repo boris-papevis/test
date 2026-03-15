@@ -8,10 +8,10 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -53,7 +53,7 @@ class WeatherApiTest {
 
             configureSerialization()
             configureRouting(service)
-            markReady()
+            this@application.markReady()
         }
         block()
     }
@@ -164,9 +164,10 @@ class WeatherApiTest {
     @Test
     fun `concurrent requests for same coords make only one upstream call`() = testApplication {
         var callCount = 0
+        val barrier = CompletableDeferred<Unit>()
         val mockEngine = MockEngine { _ ->
             callCount++
-            delay(100) // simulate upstream latency
+            barrier.await() // hold until all requests are in-flight
             respond(upstreamJson, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }
 
@@ -191,9 +192,49 @@ class WeatherApiTest {
             val requests = (1..5).map {
                 async { client.get("/api/v1/weather/current?lat=52.52&lon=13.41") }
             }
+            barrier.complete(Unit) // release upstream response
             val responses = requests.awaitAll()
             responses.forEach { assertEquals(HttpStatusCode.OK, it.status) }
         }
         assertEquals(1, callCount)
+    }
+
+    @Test
+    fun `upstream failure does not deadlock subsequent requests`() = testApplication {
+        var callCount = 0
+        val mockEngine = MockEngine { _ ->
+            callCount++
+            if (callCount == 1) {
+                respond("not json", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            } else {
+                respond(upstreamJson, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+        }
+
+        environment {
+            config = MapApplicationConfig(
+                "weather.upstream.baseUrl" to "http://fake-meteo",
+                "weather.upstream.timeoutMs" to "5000",
+                "weather.cache.ttlSeconds" to "60",
+                "weather.cache.maxSize" to "1000",
+            )
+        }
+        application {
+            val config = AppConfig.from(environment.config)
+            val client = OpenMeteoClient(config.upstream, mockEngine)
+            val cache = WeatherCache(config.cache)
+            val service = WeatherService(client, cache)
+            configureSerialization()
+            configureRouting(service)
+        }
+
+        // First request fails (malformed JSON from upstream)
+        val first = client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
+        assertEquals(HttpStatusCode.InternalServerError, first.status)
+
+        // Second request should succeed (mutex cleaned up by finally)
+        val second = client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
+        assertEquals(HttpStatusCode.OK, second.status)
+        assertEquals(2, callCount)
     }
 }

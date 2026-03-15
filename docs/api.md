@@ -40,8 +40,9 @@ Notes:
 | Status | Condition | Body |
 |--------|-----------|------|
 | 400 | Missing, non-numeric, or out-of-range `lat`/`lon` | `{"error": "Missing or invalid 'lat' parameter"}` |
+| 502 | Open-Meteo returned a non-2xx response | `{"error": "Open-Meteo returned 500: ..."}` |
 | 504 | Open-Meteo did not respond within timeout | `{"error": "Upstream timeout"}` |
-| 500 | Any other upstream or server error | `{"error": "Internal server error"}` |
+| 500 | Any other server error | `{"error": "Internal server error"}` |
 
 ### Examples
 
@@ -61,9 +62,9 @@ curl "http://localhost:8080/api/v1/weather/current?lat=91&lon=13.41"
 # -> 400: {"error": "lat must be between -90 and 90"}
 ```
 
-## `GET /health`
+## `GET /health/live`
 
-Health check endpoint for load balancers and orchestrators.
+Liveness probe for Kubernetes. Returns 200 if the JVM and Ktor are running.
 
 ### Response (200)
 
@@ -73,3 +74,19 @@ Health check endpoint for load balancers and orchestrators.
   "version": "1.0.0"
 }
 ```
+
+## `GET /health/ready`
+
+Readiness probe for Kubernetes. Returns 200 once the application has fully initialized, 503 during startup. Does not check upstream availability — pods stay in rotation to serve cached data when upstream is down.
+
+### Response (200)
+
+```json
+{
+  "status": "UP"
+}
+```
+
+## `GET /metrics`
+
+Prometheus metrics endpoint. Exposes request latency, error rates, cache hit/miss counters, and JVM stats.

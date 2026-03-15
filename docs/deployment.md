@@ -38,8 +38,8 @@ kubectl apply -f k8s/
 The deployment includes:
 - 2 replicas (stateless, each with its own in-memory cache)
 - Resource requests (100m CPU, 128Mi RAM) and limits (500m CPU, 256Mi RAM)
-- Liveness probe: `GET /health` every 15s (initial delay 10s)
-- Readiness probe: `GET /health` every 5s (initial delay 5s)
+- Liveness probe: `GET /health/live` every 15s (initial delay 10s)
+- Readiness probe: `GET /health/ready` every 10s (initial delay 5s)
 - Configuration via environment variables in the deployment spec
 
 To scale:
@@ -52,7 +52,7 @@ No shared state between pods — scaling is horizontal with no coordination need
 
 ## CI
 
-GitHub Actions runs on every push and pull request to `master`:
+GitHub Actions runs on every push and pull request to `main`:
 
 1. Checks out code
 2. Sets up JDK 17 (Corretto)

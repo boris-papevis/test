@@ -14,7 +14,7 @@ The requirement is "cache by (lat, lon) for 60 seconds." Caffeine is the standar
 
 Why not Redis: adds infrastructure for a simple TTL cache. In a multi-instance deployment, each pod caches independently — this means slightly more upstream calls but zero shared state, which simplifies operations. For a weather proxy with 60s TTL, the duplication is negligible.
 
-Cache key is `"$lat,$lon"` using the raw query parameter values. This means `52.52` and `52.5200` could be separate entries. Acceptable because Open-Meteo snaps coordinates to a ~1km grid anyway, and the 60s TTL limits waste.
+Cache key is integer-encoded at 2 decimal places: `round(lat*100),round(lon*100)`. This means `52.52` and `52.5200` hit the same entry, and coordinates differing only in the 3rd decimal place or beyond are coalesced. This matches Open-Meteo's ~0.25-degree grid resolution while avoiding floating-point key ambiguity.
 
 ## HTTP Client: Ktor CIO with timeout
 
@@ -43,4 +43,4 @@ Request logging uses Ktor's CallLogging plugin at INFO level. In production, the
 
 Multi-stage Docker build: Gradle builds the shadow JAR, then only the JRE and JAR are copied to the runtime image (Alpine-based, ~100MB total).
 
-Kubernetes manifests define resource limits, liveness/readiness probes on `/health`, and 2 replicas. Since the cache is in-memory per pod, the app is stateless and scales horizontally without coordination.
+Kubernetes manifests define resource limits, liveness probe (`/health/live`) and readiness probe (`/health/ready`), and 2 replicas. Readiness gates on app initialization only — it does not check upstream availability, so pods stay in rotation to serve cached data when the upstream is down. Since the cache is in-memory per pod, the app is stateless and scales horizontally without coordination.

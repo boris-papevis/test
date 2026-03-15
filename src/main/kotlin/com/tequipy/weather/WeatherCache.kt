@@ -28,9 +28,13 @@ class WeatherCache(
         cache.put(key(lat, lon), response)
     }
 
-    private fun key(lat: Double, lon: Double): String {
-        val latKey = (lat * 100).roundToLong()
-        val lonKey = (lon * 100).roundToLong()
-        return "$latKey,$lonKey"
+    companion object {
+        fun coordKey(lat: Double, lon: Double): String {
+            val latKey = (lat * 100).roundToLong()
+            val lonKey = (lon * 100).roundToLong()
+            return "$latKey,$lonKey"
+        }
     }
+
+    private fun key(lat: Double, lon: Double): String = coordKey(lat, lon)
 }
