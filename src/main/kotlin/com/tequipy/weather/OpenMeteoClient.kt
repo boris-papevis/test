@@ -28,7 +28,7 @@ class OpenMeteoClient(
     }
 
     suspend fun fetchCurrent(lat: Double, lon: Double): OpenMeteoResponse {
-        val response = http.get("${config.baseUrl}/v1/forecast") {
+        val response = http.get("${config.baseUrl.trimEnd('/')}/v1/forecast") {
             parameter("latitude", lat)
             parameter("longitude", lon)
             parameter("current", "temperature_2m,wind_speed_10m")

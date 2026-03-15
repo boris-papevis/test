@@ -33,7 +33,7 @@ class WeatherService(
                 cache.put(lat, lon, response)
                 response
             } finally {
-                inFlight.remove(key)
+                inFlight.remove(key, mutex)
             }
         }
     }
