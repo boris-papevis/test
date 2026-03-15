@@ -16,5 +16,5 @@ jobs:
           distribution: corretto
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew build
+      - run: chmod +x gradlew && ./gradlew build
       - run: docker build -t weather-proxy .
