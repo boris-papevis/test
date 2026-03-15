@@ -30,4 +30,23 @@ class WeatherCacheTest {
         cache.put(52.52, 13.41, sample)
         assertNull(cache.get(48.85, 2.35))
     }
+
+    @Test
+    fun `equivalent coordinates with different precision hit same cache entry`() {
+        cache.put(52.52, 13.41, sample)
+        assertEquals(sample, cache.get(52.520, 13.410))
+        assertEquals(sample, cache.get(52.5200, 13.4100))
+    }
+
+    @Test
+    fun `coordinates differing only in 3rd decimal place hit same entry`() {
+        cache.put(52.521, 13.411, sample)
+        assertEquals(sample, cache.get(52.524, 13.414))
+    }
+
+    @Test
+    fun `coordinates differing at 2nd decimal place are separate entries`() {
+        cache.put(52.52, 13.41, sample)
+        assertNull(cache.get(52.53, 13.41))
+    }
 }

@@ -11,6 +11,8 @@ fun Application.module() {
     val cache = WeatherCache(config.cache)
     val service = WeatherService(client, cache)
 
+    monitor.subscribe(ApplicationStopped) { client.close() }
+
     configureSerialization()
     configureCallLogging()
     configureRouting(service)

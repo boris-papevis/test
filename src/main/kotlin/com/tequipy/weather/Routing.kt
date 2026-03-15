@@ -10,14 +10,18 @@ import io.ktor.client.plugins.*
 fun Application.configureRouting(service: WeatherService) {
     install(StatusPages) {
         exception<HttpRequestTimeoutException> { call, _ ->
-            call.respond(HttpStatusCode.GatewayTimeout, mapOf("error" to "Upstream timeout"))
+            call.respond(HttpStatusCode.GatewayTimeout, ErrorResponse("Upstream timeout"))
+        }
+        exception<UpstreamException> { call, e ->
+            this@configureRouting.log.error("Upstream error", e)
+            call.respond(HttpStatusCode.BadGateway, ErrorResponse(e.message ?: "Upstream error"))
         }
         exception<IllegalArgumentException> { call, e ->
-            call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.message ?: "Bad request")))
+            call.respond(HttpStatusCode.BadRequest, ErrorResponse(e.message ?: "Bad request"))
         }
         exception<Throwable> { call, e ->
             this@configureRouting.log.error("Unhandled error", e)
-            call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Internal server error"))
+            call.respond(HttpStatusCode.InternalServerError, ErrorResponse("Internal server error"))
         }
     }
 

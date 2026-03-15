@@ -6,13 +6,16 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import java.io.Closeable
 
 class OpenMeteoClient(
     private val config: AppConfig.UpstreamConfig,
     engine: io.ktor.client.engine.HttpClientEngine? = null,
-) {
+) : Closeable {
     private val http = HttpClient(engine ?: CIO.create()) {
         install(ContentNegotiation) {
             json(Json { ignoreUnknownKeys = true })
@@ -23,10 +26,19 @@ class OpenMeteoClient(
         }
     }
 
-    suspend fun fetchCurrent(lat: Double, lon: Double): OpenMeteoResponse =
-        http.get("${config.baseUrl}/v1/forecast") {
+    suspend fun fetchCurrent(lat: Double, lon: Double): OpenMeteoResponse {
+        val response = http.get("${config.baseUrl}/v1/forecast") {
             parameter("latitude", lat)
             parameter("longitude", lon)
             parameter("current", "temperature_2m,wind_speed_10m")
-        }.body()
+        }
+        if (!response.status.isSuccess()) {
+            throw UpstreamException("Open-Meteo returned ${response.status.value}: ${response.bodyAsText()}")
+        }
+        return response.body()
+    }
+
+    override fun close() = http.close()
 }
+
+class UpstreamException(message: String) : RuntimeException(message)

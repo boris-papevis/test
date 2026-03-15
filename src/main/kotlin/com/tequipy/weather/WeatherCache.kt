@@ -2,6 +2,7 @@ package com.tequipy.weather
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import java.time.Duration
+import kotlin.math.roundToLong
 
 class WeatherCache(config: AppConfig.CacheConfig) {
     private val cache = Caffeine.newBuilder()
@@ -16,5 +17,9 @@ class WeatherCache(config: AppConfig.CacheConfig) {
         cache.put(key(lat, lon), response)
     }
 
-    private fun key(lat: Double, lon: Double): String = "$lat,$lon"
+    private fun key(lat: Double, lon: Double): String {
+        val latKey = (lat * 100).roundToLong()
+        val lonKey = (lon * 100).roundToLong()
+        return "$latKey,$lonKey"
+    }
 }

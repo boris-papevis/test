@@ -8,6 +8,10 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -98,12 +102,26 @@ class WeatherApiTest {
     }
 
     @Test
-    fun `upstream error returns 500`() = withApp(
+    fun `upstream error returns 502`() = withApp(
         mockResponse = """{"error": "server error"}""",
         mockStatus = HttpStatusCode.InternalServerError,
     ) {
-        val response = client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
-        assertEquals(HttpStatusCode.InternalServerError, response.status)
+        val response = createClient {
+            install(ContentNegotiation) { json() }
+        }.get("/api/v1/weather/current?lat=52.52&lon=13.41")
+        assertEquals(HttpStatusCode.BadGateway, response.status)
+        val body = response.body<ErrorResponse>()
+        assertTrue(body.error.contains("500"))
+    }
+
+    @Test
+    fun `error responses have structured ErrorResponse format`() = withApp {
+        val response = createClient {
+            install(ContentNegotiation) { json() }
+        }.get("/api/v1/weather/current?lon=13.41")
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+        val body = response.body<ErrorResponse>()
+        assertTrue(body.error.contains("lat"))
     }
 
     @Test
@@ -133,6 +151,42 @@ class WeatherApiTest {
 
         client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
         client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
+        assertEquals(1, callCount)
+    }
+
+    @Test
+    fun `concurrent requests for same coords make only one upstream call`() = testApplication {
+        var callCount = 0
+        val mockEngine = MockEngine { _ ->
+            callCount++
+            delay(100) // simulate upstream latency
+            respond(upstreamJson, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+
+        environment {
+            config = MapApplicationConfig(
+                "weather.upstream.baseUrl" to "http://fake-meteo",
+                "weather.upstream.timeoutMs" to "5000",
+                "weather.cache.ttlSeconds" to "60",
+                "weather.cache.maxSize" to "1000",
+            )
+        }
+        application {
+            val config = AppConfig.from(environment.config)
+            val client = OpenMeteoClient(config.upstream, mockEngine)
+            val cache = WeatherCache(config.cache)
+            val service = WeatherService(client, cache)
+            configureSerialization()
+            configureRouting(service)
+        }
+
+        coroutineScope {
+            val requests = (1..5).map {
+                async { client.get("/api/v1/weather/current?lat=52.52&lon=13.41") }
+            }
+            val responses = requests.awaitAll()
+            responses.forEach { assertEquals(HttpStatusCode.OK, it.status) }
+        }
         assertEquals(1, callCount)
     }
 }

@@ -17,6 +17,7 @@ spec:
       containers:
         - name: weather-proxy
           image: weather-proxy:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:

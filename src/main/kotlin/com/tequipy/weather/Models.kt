@@ -2,7 +2,6 @@ package com.tequipy.weather
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.time.Instant
 
 // --- API response ---
 
@@ -34,3 +33,8 @@ data class OpenMeteoCurrent(
     @SerialName("temperature_2m") val temperature2m: Double,
     @SerialName("wind_speed_10m") val windSpeed10m: Double,
 )
+
+// --- Error response ---
+
+@Serializable
+data class ErrorResponse(val error: String)
