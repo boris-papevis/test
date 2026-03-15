@@ -3,6 +3,3 @@ services:
     build: .
     ports:
       - "8080:8080"
-    environment:
-      UPSTREAM_TIMEOUT_MS: 1000
-      CACHE_TTL_SECONDS: 60

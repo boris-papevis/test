@@ -6,16 +6,6 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.client.plugins.*
-import io.ktor.util.*
-
-private val ReadyKey = AttributeKey<Boolean>("ready")
-
-fun Application.markReady() {
-    attributes.put(ReadyKey, true)
-}
-
-private fun Application.isReady(): Boolean =
-    attributes.getOrNull(ReadyKey) == true
 
 fun Application.configureRouting(service: WeatherService) {
     install(StatusPages) {
@@ -53,11 +43,7 @@ fun Application.configureRouting(service: WeatherService) {
         }
 
         get("/health/ready") {
-            if (this@configureRouting.isReady()) {
-                call.respond(mapOf("status" to "UP"))
-            } else {
-                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("status" to "DOWN"))
-            }
+            call.respond(mapOf("status" to "UP"))
         }
     }
 }

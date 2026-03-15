@@ -23,13 +23,13 @@ class WeatherCache(
     }
 
     fun get(lat: Double, lon: Double): WeatherResponse? {
-        val result = cache.getIfPresent(key(lat, lon))
+        val result = cache.getIfPresent(coordKey(lat, lon))
         if (result != null) hitCounter?.increment() else missCounter?.increment()
         return result
     }
 
     fun put(lat: Double, lon: Double, response: WeatherResponse) {
-        cache.put(key(lat, lon), response)
+        cache.put(coordKey(lat, lon), response)
     }
 
     companion object {
@@ -39,6 +39,4 @@ class WeatherCache(
             return "$latKey,$lonKey"
         }
     }
-
-    private fun key(lat: Double, lon: Double): String = coordKey(lat, lon)
 }

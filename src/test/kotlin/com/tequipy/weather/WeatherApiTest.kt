@@ -53,21 +53,14 @@ class WeatherApiTest {
 
             configureSerialization()
             configureRouting(service)
-            this@application.markReady()
         }
         block()
     }
 
     @Test
-    fun `liveness endpoint returns UP`() = withApp {
-        val response = client.get("/health/live")
-        assertEquals(HttpStatusCode.OK, response.status)
-    }
-
-    @Test
-    fun `readiness endpoint always returns UP`() = withApp {
-        val response = client.get("/health/ready")
-        assertEquals(HttpStatusCode.OK, response.status)
+    fun `health endpoints return UP`() = withApp {
+        assertEquals(HttpStatusCode.OK, client.get("/health/live").status)
+        assertEquals(HttpStatusCode.OK, client.get("/health/ready").status)
     }
 
     @Test
