@@ -14,6 +14,14 @@ No Redis — avoids extra infrastructure. Each pod caches independently, which m
 
 Cache key: `round(lat*100),round(lon*100)` — rounds to 2 decimal places (~1.1 km), matches Open-Meteo's grid resolution, avoids floating-point key issues.
 
+## Serialization: kotlinx.serialization
+
+Kotlin-native, compile-time, no reflection. Pairs naturally with Ktor's content negotiation. Jackson would work too but adds reflection overhead and a larger dependency tree.
+
+## Server Engine: Netty
+
+Netty is the default production engine for Ktor — mature, async, well-tested. Ktor's CIO engine is lighter but less battle-tested for production load.
+
 ## HTTP Client: Ktor CIO
 
 Upstream timeout: 1s default (connect + request + socket). On timeout, returns 504 with structured error.
@@ -23,6 +31,10 @@ The upstream path (`/v1/forecast`) is hardcoded — it's an integration contract
 ## API Versioning: URL path (`/api/v1/...`)
 
 Simple, easy to test with curl, easy to extend.
+
+## Request Collapsing
+
+Concurrent requests for the same (lat, lon) are coalesced into one upstream call using `ConcurrentHashMap` + coroutine `Mutex`. Without this, a burst of identical requests (e.g. a dashboard) would all hit Open-Meteo in parallel before the cache is populated.
 
 ## No Swagger/OpenAPI
 
