@@ -1,0 +1,10 @@
+.gradle/
+build/
+.git/
+.idea/
+*.iml
+.kotlin/
+k8s/
+docs/
+docker-compose.yml
+desktop.ini

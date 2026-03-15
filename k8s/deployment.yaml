@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weather-proxy
+  labels:
+    app: weather-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: weather-proxy
+  template:
+    metadata:
+      labels:
+        app: weather-proxy
+    spec:
+      containers:
+        - name: weather-proxy
+          image: weather-proxy:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: UPSTREAM_TIMEOUT_MS
+              value: "1000"
+            - name: CACHE_TTL_SECONDS
+              value: "60"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
