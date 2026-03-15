@@ -1,6 +1,6 @@
 # Weather Proxy API
 
-REST API that proxies current weather data from [Open-Meteo](https://open-meteo.com/). Built with Kotlin and Ktor.
+REST API that proxies current weather from [Open-Meteo](https://open-meteo.com/). Kotlin + Ktor.
 
 ## Quick Start
 
@@ -25,12 +25,12 @@ curl "http://localhost:8080/api/v1/weather/current?lat=52.52&lon=13.41"
 
 ## Architecture
 
-**Caching**: Per-pod in-memory cache (Caffeine, 60s TTL). No shared cache. If upstream goes down, cached locations still work; cache misses return 502. Shared cache (Redis) could improve this but adds complexity.
+**Caching**: Per-pod in-memory (Caffeine, 60s TTL). No shared cache — each pod caches independently.
 
-**Observability**: JSON logs (Logstash encoder), Prometheus metrics at `/metrics`, health probes at `/health/live` and `/health/ready`. Readiness does not check upstream — pods stay in rotation to serve cached data.
+**Observability**: JSON logs, Prometheus metrics at `/metrics`, health probes at `/health/live` and `/health/ready`.
 
 ## Documentation
 
-- [API Reference](docs/api.md) — endpoints, parameters, error codes
-- [Design Decisions](docs/decisions.md) — why Ktor, caching strategy, trade-offs
-- [Deployment](docs/deployment.md) — Docker, Kubernetes, configuration
+- [API Reference](docs/api.md)
+- [Design Decisions](docs/decisions.md)
+- [Deployment](docs/deployment.md)

@@ -48,7 +48,7 @@ To scale:
 kubectl scale deployment weather-proxy --replicas=4
 ```
 
-No shared state between pods — scaling is horizontal with no coordination needed.
+No shared state between pods — scales horizontally.
 
 ## CI
 

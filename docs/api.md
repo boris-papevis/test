@@ -4,7 +4,7 @@ Base URL: `http://localhost:8080`
 
 ## `GET /api/v1/weather/current`
 
-Returns current weather for a given location, proxied from Open-Meteo.
+Returns current weather from Open-Meteo.
 
 ### Parameters
 
@@ -32,8 +32,8 @@ Returns current weather for a given location, proxied from Open-Meteo.
 
 Notes:
 - `location` echoes the request parameters.
-- `retrievedAt` is the timestamp when the data was fetched from upstream. Cached responses retain the original timestamp.
-- Responses are cached for 60s per (lat, lon) pair.
+- `retrievedAt` is when data was fetched. Cached responses keep the original timestamp.
+- Responses are cached for 60s per (lat, lon).
 
 ### Error Responses
 
@@ -47,10 +47,10 @@ Notes:
 ### Examples
 
 ```bash
-# Current weather in Berlin
+# Berlin
 curl "http://localhost:8080/api/v1/weather/current?lat=52.52&lon=13.41"
 
-# Current weather in London
+# London
 curl "http://localhost:8080/api/v1/weather/current?lat=51.51&lon=-0.13"
 
 # Missing parameter
@@ -64,29 +64,20 @@ curl "http://localhost:8080/api/v1/weather/current?lat=91&lon=13.41"
 
 ## `GET /health/live`
 
-Liveness probe for Kubernetes. Returns 200 if the JVM and Ktor are running.
-
-### Response (200)
+Liveness probe. Returns 200 if the app is running.
 
 ```json
-{
-  "status": "UP",
-  "version": "1.0.0"
-}
+{"status": "UP", "version": "1.0.0"}
 ```
 
 ## `GET /health/ready`
 
-Readiness probe for Kubernetes. Returns 200 when the application can accept traffic. Does not check upstream availability — pods stay in rotation to serve cached data when upstream is down.
-
-### Response (200)
+Readiness probe. Always returns 200 — does not gate on upstream health so pods can serve cached data.
 
 ```json
-{
-  "status": "UP"
-}
+{"status": "UP"}
 ```
 
 ## `GET /metrics`
 
-Prometheus metrics endpoint. Exposes request latency, error rates, cache hit/miss counters, and JVM stats.
+Prometheus metrics: request latency, error rates, cache hit/miss, JVM stats.
