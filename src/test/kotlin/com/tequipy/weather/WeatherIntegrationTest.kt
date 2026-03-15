@@ -34,7 +34,8 @@ class WeatherIntegrationTest {
         assertEquals(HttpStatusCode.OK, response.status)
         val body = response.body<WeatherResponse>()
         assertEquals("open-meteo", body.source)
-        assertTrue(body.location.lat in 52.0..53.0)
+        assertEquals(52.52, body.location.lat)
+        assertEquals(13.41, body.location.lon)
         assertTrue(body.current.temperatureC in -40.0..50.0)
     }
 }

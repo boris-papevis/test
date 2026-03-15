@@ -23,12 +23,12 @@ class WeatherService(
 
                 val upstream = client.fetchCurrent(lat, lon)
                 val response = WeatherResponse(
-                    location = Location(lat = upstream.latitude, lon = upstream.longitude),
+                    location = Location(lat = lat, lon = lon),
                     current = CurrentWeather(
                         temperatureC = upstream.current.temperature2m,
                         windSpeedKmh = upstream.current.windSpeed10m,
                     ),
-                    retrievedAt = Instant.now().toString(),
+                    retrievedAt = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString(),
                 )
                 cache.put(lat, lon, response)
                 response

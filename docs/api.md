@@ -19,19 +19,19 @@ Returns current weather for a given location, proxied from Open-Meteo.
 {
   "location": {
     "lat": 52.52,
-    "lon": 13.419998
+    "lon": 13.41
   },
   "current": {
     "temperatureC": 5.3,
     "windSpeedKmh": 12.1
   },
   "source": "open-meteo",
-  "retrievedAt": "2026-01-11T10:12:54.123456Z"
+  "retrievedAt": "2026-01-11T10:12:54Z"
 }
 ```
 
 Notes:
-- `location` values come from Open-Meteo's response (snapped to ~1km grid), so may differ slightly from the request.
+- `location` echoes the request parameters.
 - `retrievedAt` is the timestamp when the data was fetched from upstream. Cached responses retain the original timestamp.
 - Responses are cached for 60s per (lat, lon) pair.
 
@@ -77,7 +77,7 @@ Liveness probe for Kubernetes. Returns 200 if the JVM and Ktor are running.
 
 ## `GET /health/ready`
 
-Readiness probe for Kubernetes. Returns 200 once the application has fully initialized, 503 during startup. Does not check upstream availability — pods stay in rotation to serve cached data when upstream is down.
+Readiness probe for Kubernetes. Returns 200 when the application can accept traffic. Does not check upstream availability — pods stay in rotation to serve cached data when upstream is down.
 
 ### Response (200)
 

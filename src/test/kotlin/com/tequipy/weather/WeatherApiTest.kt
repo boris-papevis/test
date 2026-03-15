@@ -75,6 +75,8 @@ class WeatherApiTest {
         assertEquals(5.3, body.current.temperatureC)
         assertEquals(12.1, body.current.windSpeedKmh)
         assertEquals(52.52, body.location.lat)
+        assertEquals(13.41, body.location.lon)
+        assertTrue(body.retrievedAt.matches(Regex("""\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z""")))
     }
 
     @Test
