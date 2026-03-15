@@ -28,6 +28,12 @@ Simple, easy to test with curl, easy to extend.
 
 Single endpoint — docs in `api.md` with runnable curl examples are enough.
 
+## Metrics: Prometheus via Micrometer
+
+Ktor's MicrometerMetrics plugin exposes request latency, error rates, and JVM stats at `/metrics`. Custom counter `weather_cache_requests{result=hit|miss}` tracks cache effectiveness.
+
+No Grafana or alerting setup — those are infrastructure concerns, not app code.
+
 ## Logging
 
 Structured JSON via Logstash encoder. CallLogging plugin at INFO level. Pod hostname in every log line.

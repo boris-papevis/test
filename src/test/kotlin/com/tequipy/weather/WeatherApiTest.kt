@@ -58,6 +58,25 @@ class WeatherApiTest {
     }
 
     @Test
+    fun `metrics endpoint returns prometheus data`() = testApplication {
+        environment {
+            config = MapApplicationConfig(
+                "weather.upstream.baseUrl" to "http://fake-meteo",
+                "weather.upstream.timeoutMs" to "1000",
+                "weather.cache.ttlSeconds" to "60",
+                "weather.cache.maxSize" to "1000",
+            )
+        }
+        application { module() }
+
+        val response = client.get("/metrics")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = response.body<String>()
+        assertTrue(body.contains("ktor_http_server_requests"))
+        assertTrue(body.contains("weather_cache_requests"))
+    }
+
+    @Test
     fun `health endpoints return UP`() = withApp {
         assertEquals(HttpStatusCode.OK, client.get("/health/live").status)
         assertEquals(HttpStatusCode.OK, client.get("/health/ready").status)
