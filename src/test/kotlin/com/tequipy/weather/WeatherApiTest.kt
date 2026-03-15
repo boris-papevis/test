@@ -104,6 +104,19 @@ class WeatherApiTest {
     }
 
     @Test
+    fun `boundary coordinates are accepted`() = withApp {
+        assertEquals(HttpStatusCode.OK, client.get("/api/v1/weather/current?lat=0&lon=0").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/v1/weather/current?lat=-90&lon=-180").status)
+        assertEquals(HttpStatusCode.OK, client.get("/api/v1/weather/current?lat=90&lon=180").status)
+    }
+
+    @Test
+    fun `boundary coordinates just outside range return 400`() = withApp {
+        assertEquals(HttpStatusCode.BadRequest, client.get("/api/v1/weather/current?lat=-90.1&lon=0").status)
+        assertEquals(HttpStatusCode.BadRequest, client.get("/api/v1/weather/current?lat=0&lon=180.1").status)
+    }
+
+    @Test
     fun `upstream error returns 502`() = withApp(
         mockResponse = """{"error": "server error"}""",
         mockStatus = HttpStatusCode.InternalServerError,
