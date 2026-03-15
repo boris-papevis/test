@@ -3,19 +3,19 @@ package com.tequipy.weather
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 class WeatherService(
     private val client: OpenMeteoClient,
     private val cache: WeatherCache,
 ) {
-    private val inFlight = mutableMapOf<String, Mutex>()
-    private val mapLock = Mutex()
+    private val inFlight = ConcurrentHashMap<String, Mutex>()
 
     suspend fun getCurrentWeather(lat: Double, lon: Double): WeatherResponse {
         cache.get(lat, lon)?.let { return it }
 
         val key = WeatherCache.coordKey(lat, lon)
-        val mutex = mapLock.withLock { inFlight.getOrPut(key) { Mutex() } }
+        val mutex = inFlight.computeIfAbsent(key) { Mutex() }
 
         return mutex.withLock {
             try {
@@ -33,7 +33,7 @@ class WeatherService(
                 cache.put(lat, lon, response)
                 response
             } finally {
-                mapLock.withLock { inFlight.remove(key) }
+                inFlight.remove(key)
             }
         }
     }

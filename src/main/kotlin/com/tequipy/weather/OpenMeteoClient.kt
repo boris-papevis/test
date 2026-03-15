@@ -23,6 +23,7 @@ class OpenMeteoClient(
         install(HttpTimeout) {
             requestTimeoutMillis = config.timeoutMs
             connectTimeoutMillis = config.timeoutMs
+            socketTimeoutMillis = config.timeoutMs
         }
     }
 
@@ -33,9 +34,14 @@ class OpenMeteoClient(
             parameter("current", "temperature_2m,wind_speed_10m")
         }
         if (!response.status.isSuccess()) {
-            throw UpstreamException("Open-Meteo returned ${response.status.value}: ${response.bodyAsText()}")
+            val body = response.bodyAsText().take(500)
+            throw UpstreamException("Open-Meteo returned ${response.status.value}: $body")
         }
-        return response.body()
+        try {
+            return response.body()
+        } catch (e: Exception) {
+            throw UpstreamException("Failed to parse Open-Meteo response: ${e.message}")
+        }
     }
 
     override fun close() = http.close()

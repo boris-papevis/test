@@ -15,8 +15,12 @@ class WeatherCache(
         .maximumSize(config.maxSize)
         .build<String, WeatherResponse>()
 
-    private val hitCounter = registry?.let { Counter.builder("weather_cache_hits").register(it) }
-    private val missCounter = registry?.let { Counter.builder("weather_cache_misses").register(it) }
+    private val hitCounter = registry?.let {
+        Counter.builder("weather_cache_requests").tag("result", "hit").register(it)
+    }
+    private val missCounter = registry?.let {
+        Counter.builder("weather_cache_requests").tag("result", "miss").register(it)
+    }
 
     fun get(lat: Double, lon: Double): WeatherResponse? {
         val result = cache.getIfPresent(key(lat, lon))

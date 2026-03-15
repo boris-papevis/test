@@ -228,9 +228,9 @@ class WeatherApiTest {
             configureRouting(service)
         }
 
-        // First request fails (malformed JSON from upstream)
+        // First request fails (malformed JSON from upstream → 502)
         val first = client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
-        assertEquals(HttpStatusCode.InternalServerError, first.status)
+        assertEquals(HttpStatusCode.BadGateway, first.status)
 
         // Second request should succeed (mutex cleaned up by finally)
         val second = client.get("/api/v1/weather/current?lat=52.52&lon=13.41")
