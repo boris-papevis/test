@@ -7,8 +7,9 @@ fun main(args: Array<String>) = EngineMain.main(args)
 
 fun Application.module() {
     val config = AppConfig.from(environment.config)
+    val registry = configureMetrics()
     val client = OpenMeteoClient(config.upstream)
-    val cache = WeatherCache(config.cache)
+    val cache = WeatherCache(config.cache, registry)
     val service = WeatherService(client, cache)
 
     monitor.subscribe(ApplicationStopped) { client.close() }
@@ -16,4 +17,5 @@ fun Application.module() {
     configureSerialization()
     configureCallLogging()
     configureRouting(service)
+    markReady()
 }

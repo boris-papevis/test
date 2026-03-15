@@ -26,7 +26,10 @@ dependencies {
     implementation("io.ktor:ktor-client-cio")
     implementation("io.ktor:ktor-client-content-negotiation")
     implementation("ch.qos.logback:logback-classic:1.5.16")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
     implementation("com.github.ben-manes.caffeine:caffeine:3.2.0")
+    implementation("io.ktor:ktor-server-metrics-micrometer")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.4")
 
     testImplementation("io.ktor:ktor-server-test-host")
     testImplementation("io.ktor:ktor-client-mock")

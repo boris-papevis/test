@@ -7,6 +7,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.client.plugins.*
 
+@Volatile
+var ready: Boolean = false
+    private set
+
+fun markReady() { ready = true }
+
 fun Application.configureRouting(service: WeatherService) {
     install(StatusPages) {
         exception<HttpRequestTimeoutException> { call, _ ->
@@ -38,8 +44,16 @@ fun Application.configureRouting(service: WeatherService) {
             call.respond(service.getCurrentWeather(lat, lon))
         }
 
-        get("/health") {
+        get("/health/live") {
             call.respond(mapOf("status" to "UP", "version" to "1.0.0"))
+        }
+
+        get("/health/ready") {
+            if (ready) {
+                call.respond(mapOf("status" to "UP"))
+            } else {
+                call.respond(HttpStatusCode.ServiceUnavailable, mapOf("status" to "DOWN"))
+            }
         }
     }
 }
