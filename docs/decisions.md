@@ -8,11 +8,33 @@ Trade-off: smaller ecosystem. Fine for this scope.
 
 ## Cache: Caffeine (in-memory)
 
-Caffeine handles "cache by (lat, lon) for 60 seconds" with TTL and bounded size.
+Chose Caffeine over Guava Cache because Caffeine's W-TinyLFU eviction policy has near-optimal hit rates — significantly better than Guava's LRU, especially under skewed access patterns (some locations queried far more than others). Guava is in maintenance mode; Caffeine is its intended successor.
 
-No Redis — avoids extra infrastructure. Each pod caches independently, which means some duplicate upstream calls but no shared state.
+Chose in-process cache over Redis to avoid extra infrastructure. Trade-off: each pod caches independently, so some duplicate upstream calls occur. Acceptable because Open-Meteo is free-tier and the duplication is bounded by TTL.
 
-Cache key: `round(lat*100),round(lon*100)` — rounds to 2 decimal places (~1.1 km), matches Open-Meteo's grid resolution, avoids floating-point key issues.
+### Eviction: W-TinyLFU (Caffeine default)
+
+Caffeine's W-TinyLFU combines recency and frequency to decide what to evict. Compared to plain LRU, it avoids cache pollution from one-off requests (a user querying a random location once won't evict a frequently-requested city). Compared to pure LFU, it adapts to changing access patterns. This matters here because weather APIs have heavily skewed access — a few popular cities dominate traffic.
+
+No configuration needed — Caffeine applies W-TinyLFU automatically when `maximumSize` is set.
+
+### Cache size: 1000 entries
+
+Default `maxSize=1000`. Each entry is one grid cell, so this covers ~1000 distinct locations. At ~1 KB per entry, total memory is ~1 MB — negligible relative to JVM heap.
+
+1000 was chosen as a conservative default for single-region deployments. A country-wide service might need 5–10k; a global one 50k+. Configurable via `CACHE_MAX_SIZE` env var.
+
+### TTL: 60 seconds
+
+Chose 60s over shorter (too many upstream calls) or longer (stale weather data). Weather conditions don't change meaningfully within a minute, and Open-Meteo updates its models hourly, so caching longer than ~300s gives diminishing returns. 60s is a safe starting point. Configurable via `CACHE_TTL_SECONDS`.
+
+### Cache key: grid cell rounding
+
+Key format: `round(lat*100),round(lon*100)` — rounds to 2 decimal places (~1.1 km grid cells).
+
+Chose 0.01° over finer resolution (0.001° = ~111m) because Open-Meteo snaps to its own grid anyway — finer keys would create distinct cache entries that return identical upstream data. A coarser grid (0.1° = ~11 km) would improve hit rates but risks returning weather for a noticeably different location (e.g. coast vs. inland). 0.01° balances cache efficiency against location accuracy.
+
+Trade-off: the response echoes the original request coordinates, not the grid-snapped ones, so two requests 500m apart may return identical weather data under different reported locations. This is acceptable for the current use case.
 
 ## Serialization: kotlinx.serialization
 
